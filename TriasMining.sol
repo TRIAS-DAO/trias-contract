@@ -15,6 +15,10 @@ import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
 
 contract miningTrias is Initializable {
     using SafeMath for uint256;
+
+    event stake_LPToken(address sender, uint256 amount);
+    event unStake_LPToken(address sender);
+    event claim_Earning(address sender);
     
     struct StakeInfo {
         uint256 amount;
@@ -31,15 +35,15 @@ contract miningTrias is Initializable {
     
     uint256 totalLPAmount;
 
-	uint256 updateTime;
-
-
     //constructor (address trias, address LPToken, address mining) public  {
     function initialize(address trias, address LPToken, address mining) public initializer {
+        require(trias != address(0), "trias address required");
+        require(LPToken != address(0), "LPToken address required");
+        require(mining != address(0), "mining account address required");
+
         _trias  = trias;
         _mining = mining;
         _LPToken = LPToken;
-        updateTime = 25022021;
     }
     
     function lpMiningNumbersPerSecond(uint256 amount, uint256 totalAmount) internal pure returns (uint256)  {
@@ -75,7 +79,7 @@ contract miningTrias is Initializable {
         }
         
         // stake金额 * 占比 * (stake 时长 / 最大stake时长) * 收益率
-        uint256 result = valueInSecond.mul(ammount).mul(ammount).div(totalLPAmount).mul(timeLong).div(1 days).div(1 ether);
+        uint256 result = valueInSecond.mul(ammount).mul(ammount).mul(timeLong).div(totalLPAmount).div(1 days).div(1 ether);
         return result;
     }
     
@@ -90,7 +94,8 @@ contract miningTrias is Initializable {
     function stakeLPToken(uint256 amount) external {
         require(amount > 0, "Amount should be bigger than 0!");
         
-        IERC20(_LPToken).transferFrom(msg.sender, address(this), amount);
+        bool success = IERC20(_LPToken).transferFrom(msg.sender, address(this), amount);
+        require(success, "transferFrom failed");
         
         if (accountsLPInfo[msg.sender].stakeTime != 0) {
             updateAccountLPEarning(msg.sender);
@@ -100,6 +105,8 @@ contract miningTrias is Initializable {
         accountsLPInfo[msg.sender].amount = accountsLPInfo[msg.sender].amount.add(amount);
         
         totalLPAmount = totalLPAmount.add(amount);
+
+        emit stake_LPToken(msg.sender, amount);
     }
     
     function unStakeLPToken() external {
@@ -115,7 +122,10 @@ contract miningTrias is Initializable {
 
         totalLPAmount = totalLPAmount.sub(amount);
 
-        IERC20(_LPToken).transfer(msg.sender, amount);
+        bool success = IERC20(_LPToken).transfer(msg.sender, amount);
+        require(success, "transfer failed");
+
+        emit unStake_LPToken(msg.sender);
     }
     
     function claimEarning() public {
@@ -132,7 +142,10 @@ contract miningTrias is Initializable {
         }
         
         if (earning > 0) {
-            IERC20(_trias).transferFrom(_mining, msg.sender, earning);
+            bool success = IERC20(_trias).transferFrom(_mining, msg.sender, earning);
+            require(success, "transferFrom failed");
+
+            emit claim_Earning(msg.sender);
         }
     }
 
@@ -151,15 +164,6 @@ contract miningTrias is Initializable {
 	    }
 	    
         return totalEarning;
-	}
-
-	function update() public {
-		//updateTime = updateTime.add(1);
-		updateTime = 25022021;
-	}
-
-	function getUpdateTime() external view returns (uint256) {
-		return updateTime;
 	}
 }
  
