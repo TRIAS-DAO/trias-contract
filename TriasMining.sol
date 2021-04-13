@@ -149,7 +149,7 @@ contract miningTrias is Initializable {
         }
     }
 
-	function getEarning() public view returns (uint256) {
+	function getEarning() external view returns (uint256) {
 		uint256 totalEarning = 0;
 	    uint256 lpOldEarning;
 	    uint256 lpNewEarning;
