@@ -128,7 +128,7 @@ contract miningTrias is Initializable {
         emit unStake_LPToken(msg.sender);
     }
     
-    function claimEarning() public {
+    function claimEarning() external {
         uint256 earning = 0;
         
         if (accountsLPInfo[msg.sender].stakeTime != 0) {
